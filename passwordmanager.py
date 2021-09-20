@@ -4,9 +4,10 @@
 
 import time
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from passwd_gen import * 
 from cryptography.fernet import Fernet
+from transfer import transfer
 
 key_string, fernet = None, None
 
@@ -155,10 +156,16 @@ class Application(Frame):
         messagebox.showinfo("Key", key_string)
 
     def import_data(self):
-        messagebox.showerror("Error", "This function is not supported yet.")
+        filename = filedialog.askopenfilename()
+        transfer.transfer(filename)
+        messagebox.showinfo("Success", "Your passwords have been imported successfully!")
 
     def export_data(self):
-        messagebox.showerror("Error", "This function is not supported yet.")
+        #filename = filedialog.asksaveasfilename()
+        filename = filedialog.askdirectory()
+        transfer.export(filename)
+        self.loadData()
+        messagebox.showinfo("Success", "Your password have been exported successfully!")
 
 
     # Speichert einen neuen Eintrag im .txt, im Dictionary und schreibt die URL in das entsprechende Feld
@@ -194,6 +201,7 @@ class Application(Frame):
 
     # Lädt die Daten aus dem .txt in das Dictionary und schreibt die URL in das entsprechende Feld
     def loadData(self):
+        # Erhält ein String bei jeder Verschlüsselung einen unterschiedliches Ergebnis? -> Prüfen!!
         with open(".data.txt", "r") as f:
             for line in f:
                 temp_url = fernet.decrypt(line[0:100].encode()).decode()
@@ -258,7 +266,7 @@ def startup():
     except FileNotFoundError:
         with open(".config", "w") as f:
             # Neuen key generieren
-            key_string = fernet.generate_key().decode()
+            key_string = Fernet.generate_key().decode()
             f.write(key_string)
 
         with open(".data.txt", "w") as q:  # erstellt das Passwort-File
@@ -297,3 +305,4 @@ if __name__ == '__main__':
 # Wegen der unterschiedlichen Länge: Einfach alles mit Leerzeichen strecken?
 
 # Idiotensicher machen.nice
+# 
