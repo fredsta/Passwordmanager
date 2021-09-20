@@ -2,3 +2,7 @@
 .data.txt
 fastencrypt.py
 hanspeter.txt
+heinz.txt
+__pycache__/intputs.cpython-39.pyc
+__pycache__/passwd_gen.cpython-39.pyc
+__pycache__/transfer.cpython-39.pyc
