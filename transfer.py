@@ -24,10 +24,12 @@ class transfer:
                 decrypted.append([])
         
         # Decrypt things with old key
-        for j in range(len(lines)):
+        j = 0
+        for line in lines:
             for i in range(3):
                 decrypted_stuff = old_fernet.decrypt(line[100*i:100+100*i].encode()).decode()
                 decrypted[j].append(decrypted_stuff)
+            j += 1
         
         # Encrypt with new key and save to file
         with open(".data.txt", "w") as f:
@@ -56,7 +58,6 @@ class transfer:
     def export(export_path):
         print("Export's running...")
         # Exports the data-file including the key to the given path
-        export_path += "/heinz.txt"
         key = ""
         content = []
         with open(".config", "r") as config:

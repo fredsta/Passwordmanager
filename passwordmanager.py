@@ -25,10 +25,14 @@ class Application(Frame):
         menubar = Menu(master, bg="#14161B", fg="White", bd=0, activebackground="#14161B", activeforeground="#c7c7c7", activeborderwidth=0)
         
         #self.windowKill
-        setupmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0)
+        setupmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0, selectcolor="Green")
         setupmenu.add_command(label="Export", command=self.export_data)
         setupmenu.add_command(label="Import", command=self.import_data)
         setupmenu.add_command(label="Show Key", command=self.show_key)
+
+        show_password = BooleanVar()
+        #show_password.set(True)
+        setupmenu.add_checkbutton(label="Show password", onvalue=1, offvalue=0, variable=show_password)
         menubar.add_cascade(label="Setup", menu = setupmenu)
 
         helpmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0)
@@ -158,14 +162,13 @@ class Application(Frame):
     def import_data(self):
         filename = filedialog.askopenfilename()
         transfer.transfer(filename)
+        self.loadData()
         messagebox.showinfo("Success", "Your passwords have been imported successfully!")
 
     def export_data(self):
-        #filename = filedialog.asksaveasfilename()
-        filename = filedialog.askdirectory()
+        filename = filedialog.askdirectory() + "/pawoman_export.txt"
         transfer.export(filename)
-        self.loadData()
-        messagebox.showinfo("Success", "Your password have been exported successfully!")
+        messagebox.showinfo("Success", "Your passwords have been exported successfully!")
 
 
     # Speichert einen neuen Eintrag im .txt, im Dictionary und schreibt die URL in das entsprechende Feld
