@@ -26,8 +26,15 @@ class transfer:
         # Decrypt things with old key
         j = 0
         for line in lines:
-            for i in range(3):
-                decrypted_stuff = old_fernet.decrypt(line[100*i:100+100*i].encode()).decode()
+            separators, index = [], 0
+            separators.append(0)
+            for i in range(2):
+                index = line.find("|", index)
+                separators.append(index)
+                index += 1
+            separators.append(len(line))
+            for q in range(3):
+                decrypted_stuff = old_fernet.decrypt(line[separators[q]:separators[q+1]].encode()).decode()
                 decrypted[j].append(decrypted_stuff)
             j += 1
         
@@ -36,7 +43,7 @@ class transfer:
             for j in range(len(decrypted)):
                 encrypted = ""
                 for i in range(3):
-                    encrypted += new_fernet.encrypt(decrypted[j][i].encode()).decode() 
+                    encrypted += new_fernet.encrypt(decrypted[j][i].encode()).decode() + "|"
                 f.write(encrypted + "\n")
 
         # ToDo: Override the .config file with the new key

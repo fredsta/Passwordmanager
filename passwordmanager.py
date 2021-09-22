@@ -29,10 +29,10 @@ class Application(Frame):
         setupmenu.add_command(label="Export", command=self.export_data)
         setupmenu.add_command(label="Import", command=self.import_data)
         setupmenu.add_command(label="Show Key", command=self.show_key)
+        setupmenu.add_command(label="Config Generator", command=self.config_generator)
 
-        show_password = BooleanVar()
-        #show_password.set(True)
-        setupmenu.add_checkbutton(label="Show password", onvalue=1, offvalue=0, variable=show_password)
+        self.show_password = BooleanVar()
+        setupmenu.add_checkbutton(label="Show password", onvalue=1, offvalue=0, variable=self.show_password)
         menubar.add_cascade(label="Setup", menu = setupmenu)
 
         helpmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0)
@@ -43,7 +43,6 @@ class Application(Frame):
 
 
         master.config(menu = menubar)
-
 
         master.config(bg="#222936")
         # Frame for general Size etc.
@@ -134,7 +133,6 @@ class Application(Frame):
         self.imgLens = Label(self.frSearch, image=self.lens, bg="White")
         self.imgLens.place(x=335, y=1)
 
-
     # Live-Suche in der Listbox nach URLs
     def search_refresh(self, var):
         if self.firstTime:  # Workaround wegen der .trace Funktion im Konstruktor
@@ -186,7 +184,7 @@ class Application(Frame):
 
         with open(".data.txt", "a") as myFile:
             for i in range(len(data)):
-                myFile.write(data[i])
+                myFile.write(data[i]+"|")
             myFile.write("\n")
 
     
@@ -198,18 +196,27 @@ class Application(Frame):
         self.entPassword.insert(0, password)
 
 
-    def more(self):  # further settings for the password-generator
-        pass
+    # Opens a new toplevel window to let the user configure the passwordgenerator
+    def config_generator(self): # wird aktuell bei Start in den Hintergrund gepackt...
+        wSettings = Toplevel(master)
+        wSettings.title("Setup generator")
+        wSettings.geometry("200x200")
+        wSettings.grab_set()
+        wSettings.lift()
 
 
     # Lädt die Daten aus dem .txt in das Dictionary und schreibt die URL in das entsprechende Feld
     def loadData(self):
-        # Erhält ein String bei jeder Verschlüsselung einen unterschiedliches Ergebnis? -> Prüfen!!
         with open(".data.txt", "r") as f:
             for line in f:
-                temp_url = fernet.decrypt(line[0:100].encode()).decode()
-                temp_user = fernet.decrypt(line[100:200].encode()).decode()
-                temp_pw = fernet.decrypt(line[200:300].encode()).decode()
+                separators, index = [], 0
+                for i in range(2):
+                    index = line.find("|", index)
+                    separators.append(index)
+                    index += 1
+                temp_url = fernet.decrypt(line[0:separators[0]].encode()).decode()
+                temp_user = fernet.decrypt(line[separators[0]:separators[1]].encode()).decode()
+                temp_pw = fernet.decrypt(line[separators[1]:].encode()).decode()
                 self.loadedData.update({temp_url:[temp_user, temp_pw]})
                 self.lbSites.insert(END, temp_url)
 
@@ -235,20 +242,23 @@ class Application(Frame):
             with open(".data.txt", "w") as f:
                 for line in lines:
                     f.write(line)
-
         else:
-            pass  # nothing else should happen
+            #pass  # nothing else should happen
+            messagebox.showerror("Error", "Nothing selected to delete.")
 
 
-    # Callback-Funktion, wenn ein Element der Listbox ausgewählt wird.
+    # Callback function if an element in the listbox gets selected
     def lbSelect(self, event):
         self.selection = event.widget.curselection()
         if self.selection:
             linked_password = self.loadedData.get(event.widget.get(self.selection[0]))[1]
             linked_username = self.loadedData.get(event.widget.get(self.selection[0]))[0]
-            self.lblFurtherInf.config(text=linked_username)
+            text_to_show = linked_username
+            if self.show_password.get() == 1:  # Also shows the password when the checkbox is checked
+                text_to_show += ": " + linked_password
+            self.lblFurtherInf.config(text=text_to_show)
 
-            # Passwort ins Clipboards schieben - nur verfügbar solange das Programm läuft.
+            # Paste the password into the clipboard, only accessible while the programm's running
             master.clipboard_clear()
             master.clipboard_append(linked_password)
             master.update()
@@ -300,12 +310,4 @@ if __name__ == '__main__':
 
 # evtl. ne .exe draus bauen, damit man es auf anderen Geräte auch verwenden kann?
 
-# Für verschiedene Rechner eine Funktion schreiben, wo man den "alten" key eingeben kann
-# und dann wird der Inhalt aus der .txt-Datei auf den neuen Key umgekrypted...
-
-# Ne Art Installation-Manger basteln, damit man das 'frisch' nutzen kann?!
-
-# Wegen der unterschiedlichen Länge: Einfach alles mit Leerzeichen strecken?
-
-# Idiotensicher machen.nice
-# 
+# Idiotensicher machen
