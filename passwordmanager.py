@@ -1,5 +1,5 @@
 # Passwordmanager with GUI
-# Version: 19.09.2021
+# Version: 27.09.2021
 # author: fredsta
 
 import time
@@ -67,7 +67,7 @@ class Application(Frame):
         self.frSearch = Frame(self.frMain)  # Frame for the searchbar and the lens-picture
         self.frSearch.pack()
 
-        self.frTable = Frame(self.frMain, bg="White")  # Frame for the content
+        self.frTable = Frame(self.frMain, bg="#222936")  # Frame for the content
         self.frTable.pack()
 
 
@@ -81,7 +81,7 @@ class Application(Frame):
         self.lblPassword = Label(self.frPassword, text="Password", font=("Arial", 12), bg="#222936", fg="white")
         self.lblPassword.pack(side=LEFT, padx=10)
 
-        self.lblFurtherInf = Label(self.frTable, text="", font=("Arial",12),bg="#222936", fg="white")
+        self.lblFurtherInf = Label(self.frTable, text="", font=("Arial",12),bg="#222936", fg="white", highlightbackground="White", highlightcolor="White", highlightthickness=2)
         self.lblFurtherInf.pack(side=BOTTOM, padx=2, pady=2, fill=BOTH)
 
         # Buttons
@@ -126,14 +126,14 @@ class Application(Frame):
         self.entSearch.insert(0, "Suche...")
         self.entSearch.bind("<FocusIn>", self.FocusIn)
 
-        self.loadData()  # Bereits vorhandene Passwörter in das Textfeld laden
+        self.loadData()  # loads already existing passwords into the listbox
 
         # Images (labels)
         self.lens = PhotoImage(file="img/lens.png")
         self.imgLens = Label(self.frSearch, image=self.lens, bg="White")
         self.imgLens.place(x=335, y=1)
 
-    # Live-Suche in der Listbox nach URLs
+    # live-search for entries in the listbox
     def search_refresh(self, var):
         if self.firstTime:  # Workaround wegen der .trace Funktion im Konstruktor
             self.firstTime = 0
@@ -152,28 +152,47 @@ class Application(Frame):
         messagebox.showinfo("About", "Password-Manager created by fredsta")
 
     def show_help(self):
-        messagebox.showwarning("Help", "Dies ist keine Hilfe.")
+        messagebox.showwarning("Help", "This is no help.")
 
     def show_key(self):
         messagebox.showinfo("Key", key_string)
 
     def import_data(self):
         filename = filedialog.askopenfilename()
-        transfer.transfer(filename)
-        self.loadData()
+        if len(filename) == 0:
+            return
+        try:
+            transfer.transfer(filename)
+            self.loadData()
+        except Exception as e:
+            messagebox.showerror("Import failed!", "That didn't work :(")
+            print("Error!", str(e))
+            return
         messagebox.showinfo("Success", "Your passwords have been imported successfully!")
 
     def export_data(self):
         filename = filedialog.askdirectory() + "/pawoman_export.txt"
-        transfer.export(filename)
+        try:
+            transfer.export(filename)
+        except Exception as e:
+            print("ERROR!", str(e))
+            messagebox.showerror("Failed", "Export failed!")
         messagebox.showinfo("Success", "Your passwords have been exported successfully!")
 
 
-    # Speichert einen neuen Eintrag im .txt, im Dictionary und schreibt die URL in das entsprechende Feld
+    # Saves a new data-packet into the dictionary and to the .data.txt file
     def saveEntry(self):
         data = []
         entries = [self.entURL, self.entUsername, self.entPassword]
-
+        for entry in entries:  # Catch user-input-errors
+            if entry.get() == "" or entry.get() == "Website" or entry.get() == "Username" or entry.get() == "Password":
+                messagebox.showerror("Error", "Please fill in all entries")
+                return
+            else:
+                for key in self.loadedData:
+                    if entry.get() == key:
+                        messagebox.showerror("Error", "This Website/Service already has an entry in the list.")
+                        return
         self.loadedData.update({entries[0].get():[entries[1].get(), entries[2].get()]})
         self.lbSites.insert(END, entries[0].get())
 
@@ -188,24 +207,24 @@ class Application(Frame):
             myFile.write("\n")
 
     
-    # Generiert ein Kennwort und setzt es in das entsprechende Feld
+    #  Generates a random password and puts it into the passwordfield
     def generate(self):
-        password = self.pwdGenerator.generate_password() # hier noch weiters Fenster mit Parameter-Auswahl öffnen
+        password = self.pwdGenerator.generate_password() # Paste other config which was modified with the toplevel-window
         self.entPassword.delete(0, END)
         self.entPassword.config(fg="Black")
         self.entPassword.insert(0, password)
 
 
     # Opens a new toplevel window to let the user configure the passwordgenerator
-    def config_generator(self): # wird aktuell bei Start in den Hintergrund gepackt...
+    def config_generator(self):
         wSettings = Toplevel(master)
         wSettings.title("Setup generator")
-        wSettings.geometry("200x200")
+        wSettings.geometry("300x200")
         wSettings.grab_set()
         wSettings.lift()
 
 
-    # Lädt die Daten aus dem .txt in das Dictionary und schreibt die URL in das entsprechende Feld
+    # loads data from .data.txt and puts them into the right place
     def loadData(self):
         with open(".data.txt", "r") as f:
             for line in f:
@@ -221,21 +240,21 @@ class Application(Frame):
                 self.lbSites.insert(END, temp_url)
 
 
-    # Löscht den aktuell ausgewählten Eintrag (Passwort, User, URL)
+    # clears the current selected entry out of .data.txt (and the dictionary)
     def deleteItem(self):
         lines = []
         if self.selection:
             index = self.selection[0]
-            # Eintrag aus dem Dictionary entfernen
+            # Remove from dictionary
             key = list(self.loadedData.keys())[index]
             del self.loadedData[key]
 
-            # Liste neu laden
+            # reload listbox-entries
             self.lbSites.delete(0, END)
             for key in self.loadedData.keys():
                 self.lbSites.insert(END, key)
 
-            # Eintrag aus dem .txt-File entfernen
+            # Remove entry from .data.txt
             with open(".data.txt", "r") as f:
                 lines = f.readlines()
             lines.pop(index)
@@ -243,7 +262,6 @@ class Application(Frame):
                 for line in lines:
                     f.write(line)
         else:
-            #pass  # nothing else should happen
             messagebox.showerror("Error", "Nothing selected to delete.")
 
 
@@ -269,20 +287,20 @@ class Application(Frame):
         event.widget.config(fg="Black")
 
 
-# Kümmert sich um Konfigurationen etc.
+# cares about config etc.
 def startup():
     global key_string, fernet
     try:   
-        with open(".config", "r") as f: # Wenn das file existiert, kann der Key eingelesen werden.
+        with open(".config", "r") as f:  # the key can be read if the file exists
             key_string = f.readlines()[0].strip("\n")
 
     except FileNotFoundError:
         with open(".config", "w") as f:
-            # Neuen key generieren
+            # generate new key
             key_string = Fernet.generate_key().decode()
             f.write(key_string)
 
-        with open(".data.txt", "w") as q:  # erstellt das Passwort-File
+        with open(".data.txt", "w") as q:  # creates a password file
             pass
     
     key = key_string.encode()
@@ -295,19 +313,8 @@ if __name__ == '__main__':
     photo = PhotoImage(file="img/lockdark.png")
     master.iconphoto(False, photo)
 
-    #master.withdraw() --> versteckt das Fenster
     master.geometry("500x500")
     master.title("Password-Manager")
     app = Application(master)
     
     app.mainloop()
-
-
-# Passwortgenerator mit einbauen: Teilweise erledigt
-# Optische Gestaltung verbessern
-
-# Als .pyw speichern, um keine Konsole zu öffnen
-
-# evtl. ne .exe draus bauen, damit man es auf anderen Geräte auch verwenden kann?
-
-# Idiotensicher machen
