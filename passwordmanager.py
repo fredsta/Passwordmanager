@@ -8,8 +8,10 @@ from tkinter import messagebox, filedialog
 from passwd_gen import * 
 from cryptography.fernet import Fernet
 from transfer import transfer
+from config_window import config_window
 
 key_string, fernet = None, None
+generator_config = []
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -24,7 +26,6 @@ class Application(Frame):
 
         menubar = Menu(master, bg="#14161B", fg="White", bd=0, activebackground="#14161B", activeforeground="#c7c7c7", activeborderwidth=0)
         
-        #self.windowKill
         setupmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0, selectcolor="Green")
         setupmenu.add_command(label="Export", command=self.export_data)
         setupmenu.add_command(label="Import", command=self.import_data)
@@ -217,11 +218,14 @@ class Application(Frame):
 
     # Opens a new toplevel window to let the user configure the passwordgenerator
     def config_generator(self):
+        global generator_config
         wSettings = Toplevel(master)
         wSettings.title("Setup generator")
-        wSettings.geometry("300x200")
-        wSettings.grab_set()
-        wSettings.lift()
+        #wSettings.geometry("300x200")
+        #wSettings.grab_set()
+        #wSettings.lift()
+        x = config_window(wSettings, generator_config)
+        print(generator_config)
 
 
     # loads data from .data.txt and puts them into the right place
@@ -289,7 +293,7 @@ class Application(Frame):
 
 # cares about config etc.
 def startup():
-    global key_string, fernet
+    global key_string, fernet, generator_config
     try:   
         with open(".config", "r") as f:  # the key can be read if the file exists
             key_string = f.readlines()[0].strip("\n")
