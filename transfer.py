@@ -1,7 +1,7 @@
 # transfer.py
 # Author: fredsta
-# Version: 19.09.2021
-# Purpose: Translate one encrypted file to another key
+# Version: 30.09.2021
+# Translate one encrypted file to another key
 
 from cryptography.fernet import Fernet
 
@@ -46,7 +46,6 @@ class transfer:
                     encrypted += new_fernet.encrypt(decrypted[j][i].encode()).decode() + "|"
                 f.write(encrypted + "\n")
 
-        # ToDo: Override the .config file with the new key
     
     @staticmethod
     def get_old_key(path):
@@ -76,11 +75,3 @@ class transfer:
         with open(export_path, "w") as output:
             for line in content:
                 output.writelines(line)
-
-            
-
-if __name__ == '__main__':
-    old_key = "f8JxI5ZHAEhq-3ch1j20LC3oxeL63lONQCBODUFfYoA="
-    new_key = "Z9VL9ytgJS9bcYCtJhtwIjKN-SWVVcTxv5oexh5Yjno="
-    #transfer.transfer(old_key, new_key, "hanspeter.txt")
-    #transfer.export("testexport.txt")

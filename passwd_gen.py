@@ -1,6 +1,6 @@
 # passwd_gen.py
 # author, version = fredsta, 19.09.2021
-# purpose: Basic password-generator
+# Basic password-generator
 
 import random
 import string
@@ -47,14 +47,10 @@ class passwd_gen:
         return password
 
 
-    def generate_password(self, length = 8):
-        if length != 8:
-            self.parameter_prompt()
-        else:
-            self.length = 8
-            self.include_capitals = True
-            self.include_extra_chars = True
-
+    def generate_password(self, length = 8, include_capitals = True, include_extras = True):
+        self.length = length
+        self.include_capitals = include_capitals
+        self.include_extra_chars = include_extras
         password = self.generate_chars()
         return password
 

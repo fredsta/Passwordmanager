@@ -1,5 +1,5 @@
-# Passwordmanager with GUI
-# Version: 27.09.2021
+# Passwordmanager with tkinter-GUI
+# Version: 30.09.2021
 # author: fredsta
 
 import time
@@ -8,22 +8,20 @@ from tkinter import messagebox, filedialog
 from passwd_gen import * 
 from cryptography.fernet import Fernet
 from transfer import transfer
-from config_window import config_window
 
 key_string, fernet = None, None
-generator_config = []
 
+# Class for the whole application
 class Application(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
-        self.selection = None  # Aktuelle Auswahl in der Listbox, damit die Elemente einfacher gelöscht werden können
-        self.pwdGenerator = passwd_gen()  # instanziere den Password-Generator
-        self.loadedData = {}  # Dic zum temporären Speichern der Passwörter etc.
-        self.firstTime = 1  # Damit eine Methode beim ersten Ausführen eine andere Funktion ausführt.
+        self.selection = None               # for the listbox
+        self.pwdGenerator = passwd_gen()    # create instance of the passwordgenerator
+        self.loadedData = {}                # the decrypted data will be loaded into a dictionary
+        self.firstTime = 1                  # bootflag for one function
+        self.config = [1, 1, 16]            # Generator config
 
-        # Menüstruktur
-        #self.create_menu(master)
-
+        # config menubar
         menubar = Menu(master, bg="#14161B", fg="White", bd=0, activebackground="#14161B", activeforeground="#c7c7c7", activeborderwidth=0)
         
         setupmenu = Menu(menubar, tearoff=0, fg="White", bg="#14161B", bd=0, selectcolor="Green")
@@ -42,10 +40,9 @@ class Application(Frame):
         helpmenu.add_command(label="Help", command=self.show_help)
         menubar.add_cascade(label="Help", menu = helpmenu)
 
-
         master.config(menu = menubar)
-
         master.config(bg="#222936")
+
         # Frame for general Size etc.
         self.frMain = Frame(master, width=800, height=600, bg="#222936")
         self.frMain.pack()
@@ -136,7 +133,7 @@ class Application(Frame):
 
     # live-search for entries in the listbox
     def search_refresh(self, var):
-        if self.firstTime:  # Workaround wegen der .trace Funktion im Konstruktor
+        if self.firstTime:  # Workaround because of .trace function in constructor
             self.firstTime = 0
         else:
             self.lbSites.delete(0, END)
@@ -210,7 +207,10 @@ class Application(Frame):
     
     #  Generates a random password and puts it into the passwordfield
     def generate(self):
-        password = self.pwdGenerator.generate_password() # Paste other config which was modified with the toplevel-window
+        length = self.config[2]
+        extras = self.config[1]
+        capitals = self.config[0]
+        password = self.pwdGenerator.generate_password(length, capitals, extras) # Paste other config which was modified with the toplevel-window
         self.entPassword.delete(0, END)
         self.entPassword.config(fg="Black")
         self.entPassword.insert(0, password)
@@ -218,14 +218,58 @@ class Application(Frame):
 
     # Opens a new toplevel window to let the user configure the passwordgenerator
     def config_generator(self):
-        global generator_config
-        wSettings = Toplevel(master)
-        wSettings.title("Setup generator")
-        #wSettings.geometry("300x200")
-        #wSettings.grab_set()
-        #wSettings.lift()
-        x = config_window(wSettings, generator_config)
-        print(generator_config)
+        self.wSettings = Toplevel(master)
+        self.wSettings.title("Setup generator")
+
+         # Frames
+        self.frLength = Frame(self.wSettings, bg="#222936")
+        self.frLength.pack()
+        self.frExtras = Frame(self.wSettings, bg="#222936")
+        self.frExtras.pack()
+        self.frCapitals = Frame(self.wSettings, bg="#222936")
+        self.frCapitals.pack()
+        self.frButton = Frame(self.wSettings, bg="#222936")
+        self.frButton.pack()
+
+        # pwlength
+        self.lblPWlength = Label(self.frLength, text="Length (4-32)?", font=("Arial", 12), bg="#222936", fg="white")
+        self.lblPWlength.pack(side=LEFT, pady=10, padx=10)
+
+        self.slLength = Scale(self.frLength, from_=4, to=32, orient=HORIZONTAL, bg="#222936", fg="White", borderwidth=0, troughcolor="White", relief=FLAT, cursor="arrow")
+        self.slLength.pack(side=LEFT, pady=10, anchor=E)
+        self.slLength.set(16)
+
+        # including extra chars
+        self.lblExtraChars = Label(self.frExtras, text="Include extra chars (e.g. 012%&!_)  ", font=("Arial", 12), bg="#222936", fg="white")
+        self.lblExtraChars.pack(side=LEFT, pady=10)
+
+        self.varExtra = IntVar()
+        self.varExtra.set(True)
+        self.cbtnExtra = Checkbutton(self.frExtras, variable=self.varExtra, bg="#222936", activebackground="#222936", selectcolor="White", fg="Green")
+        self.cbtnExtra.pack(side=LEFT, pady=10)
+
+        # including capitals
+        self.lblCapitals = Label(self.frCapitals, text="Include capital Letters  ", font=("Arial", 12), bg="#222936", fg="white")
+        self.lblCapitals.pack(side=LEFT, pady=10)
+
+        self.varCapitals = IntVar()
+        self.varCapitals.set(True)
+        self.cbtnCapitals = Checkbutton(self.frCapitals, variable=self.varCapitals, bg="#222936", activebackground="#222936", fg="Green")
+        self.cbtnCapitals.pack(side=LEFT, pady=10)
+
+        # okay-button
+        self.btnOkay = Button(self.frButton, text="Okay", command=self.evaluate, font=("Arial", 12), bg="#222936", fg="white", activebackground="White", activeforeground="#222936")
+        self.btnOkay.pack(side=LEFT, pady=10)
+
+        self.wSettings.geometry("300x200")
+        self.wSettings.config(bg="#222936")
+
+
+    # collect the settings from the toplevel window
+    def evaluate(self):
+        self.config = [self.varCapitals.get(), self.varExtra.get(), self.slLength.get()]
+        print(self.config)
+        self.wSettings.destroy()  # kills the window
 
 
     # loads data from .data.txt and puts them into the right place
@@ -295,7 +339,7 @@ class Application(Frame):
 def startup():
     global key_string, fernet, generator_config
     try:   
-        with open(".config", "r") as f:  # the key can be read if the file exists
+        with open(".config", "r") as f:     # the key can be read if the file exists
             key_string = f.readlines()[0].strip("\n")
 
     except FileNotFoundError:
@@ -311,6 +355,7 @@ def startup():
     fernet = Fernet(key)
 
 
+# main 
 if __name__ == '__main__':
     startup()
     master = Tk()
