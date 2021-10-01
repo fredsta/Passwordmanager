@@ -121,7 +121,7 @@ class Application(Frame):
 
         self.entSearch = Entry(self.frSearch, font=("Arial",13), fg="#878787", textvariable=var, borderwidth=0, width=36)
         self.entSearch.pack(side=LEFT)
-        self.entSearch.insert(0, "Suche...")
+        self.entSearch.insert(0, "Search...")
         self.entSearch.bind("<FocusIn>", self.FocusIn)
 
         self.loadData()  # loads already existing passwords into the listbox
@@ -268,7 +268,6 @@ class Application(Frame):
     # collect the settings from the toplevel window
     def evaluate(self):
         self.config = [self.varCapitals.get(), self.varExtra.get(), self.slLength.get()]
-        print(self.config)
         self.wSettings.destroy()  # kills the window
 
 
